@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 django = "*"
 djangorestframework = "*"
+drf-spectacular = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 autopep8 = "*"
