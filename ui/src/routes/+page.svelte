@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly, slide } from 'svelte/transition';
+    import { fly } from "svelte/transition";
     import type { ActionData, PageData } from "./$types";
     import { enhance } from "$app/forms";
 
@@ -28,9 +28,11 @@
 {#if todos}
     <ul>
         {#each todos as todo (todo.id)}
-            <li class="todo" in:fly={{ y: 20 }} out:slide>
+            <li class="todo" in:fly={{ y: 20 }}>
                 <form action="?/delete" method="post" use:enhance>
-                    {todo.title} - {todo.description}
+                    <a href="/{todo.id}">
+                        {todo.title}
+                    </a>
                     <input type="hidden" name="id" value={todo.id} />
                     <input type="submit" value="Complete" />
                 </form>
