@@ -8,6 +8,9 @@ django = "*"
 djangorestframework = "*"
 drf-spectacular = "*"
 django-cors-headers = "*"
+dj-rest-auth = "*"
+django-allauth = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 autopep8 = "*"

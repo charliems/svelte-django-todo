@@ -9,6 +9,62 @@
  * ---------------------------------------------------------------
  */
 
+/** Serializer for JWT authentication. */
+export interface JWT {
+  access_token: string;
+  refresh_token: string;
+  /** User model w/o password */
+  user: UserDetails;
+}
+
+export interface LoginRequest {
+  username?: string;
+  /** @format email */
+  email?: string;
+  /** @minLength 1 */
+  password: string;
+}
+
+export interface PasswordChangeRequest {
+  /**
+   * @minLength 1
+   * @maxLength 128
+   */
+  new_password1: string;
+  /**
+   * @minLength 1
+   * @maxLength 128
+   */
+  new_password2: string;
+}
+
+/** Serializer for confirming a password reset attempt. */
+export interface PasswordResetConfirmRequest {
+  /**
+   * @minLength 1
+   * @maxLength 128
+   */
+  new_password1: string;
+  /**
+   * @minLength 1
+   * @maxLength 128
+   */
+  new_password2: string;
+  /** @minLength 1 */
+  uid: string;
+  /** @minLength 1 */
+  token: string;
+}
+
+/** Serializer for requesting a password reset e-mail. */
+export interface PasswordResetRequest {
+  /**
+   * @format email
+   * @minLength 1
+   */
+  email: string;
+}
+
 export interface PatchedTodoRequest {
   /**
    * @minLength 1
@@ -17,6 +73,50 @@ export interface PatchedTodoRequest {
   title?: string;
   /** @minLength 1 */
   description?: string;
+}
+
+/** User model w/o password */
+export interface PatchedUserDetailsRequest {
+  /**
+   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+   * @minLength 1
+   * @maxLength 150
+   * @pattern ^[\w.@+-]+$
+   */
+  username?: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+}
+
+export interface RegisterRequest {
+  /**
+   * @minLength 1
+   * @maxLength 150
+   */
+  username: string;
+  /**
+   * @format email
+   * @minLength 1
+   */
+  email: string;
+  /** @minLength 1 */
+  password1: string;
+  /** @minLength 1 */
+  password2: string;
+}
+
+export interface ResendEmailVerificationRequest {
+  /**
+   * @format email
+   * @minLength 1
+   */
+  email: string;
+}
+
+export interface RestAuthDetail {
+  detail: string;
 }
 
 export interface Todo {
@@ -34,6 +134,61 @@ export interface TodoRequest {
   title: string;
   /** @minLength 1 */
   description: string;
+}
+
+export interface TokenRefresh {
+  access: string;
+}
+
+export interface TokenRefreshRequest {
+  /** @minLength 1 */
+  refresh: string;
+}
+
+export interface TokenVerifyRequest {
+  /** @minLength 1 */
+  token: string;
+}
+
+/** User model w/o password */
+export interface UserDetails {
+  /** ID */
+  pk: number;
+  /**
+   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+   * @maxLength 150
+   * @pattern ^[\w.@+-]+$
+   */
+  username: string;
+  /**
+   * Email address
+   * @format email
+   */
+  email: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+}
+
+/** User model w/o password */
+export interface UserDetailsRequest {
+  /**
+   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+   * @minLength 1
+   * @maxLength 150
+   * @pattern ^[\w.@+-]+$
+   */
+  username: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+}
+
+export interface VerifyEmailRequest {
+  /** @minLength 1 */
+  key: string;
 }
 
 import axios from "axios";
@@ -176,14 +331,252 @@ export class HttpClient<SecurityDataType = unknown> {
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
   api = {
     /**
+     * @description Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework Accept the following POST parameters: username, password Return the REST Framework Token Object's key.
+     *
+     * @tags accounts
+     * @name AccountsLoginCreate
+     * @request POST:/api/v1/accounts/login/
+     * @secure
+     */
+    accountsLoginCreate: (data: LoginRequest, params: RequestParams = {}) =>
+      this.request<JWT, any>({
+        path: `/api/v1/accounts/login/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Calls Django logout method and delete the Token object assigned to the current User object. Accepts/Returns nothing.
+     *
+     * @tags accounts
+     * @name AccountsLogoutCreate
+     * @request POST:/api/v1/accounts/logout/
+     * @secure
+     */
+    accountsLogoutCreate: (params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/logout/`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Calls Django Auth SetPasswordForm save method. Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.
+     *
+     * @tags accounts
+     * @name AccountsPasswordChangeCreate
+     * @request POST:/api/v1/accounts/password/change/
+     * @secure
+     */
+    accountsPasswordChangeCreate: (data: PasswordChangeRequest, params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/password/change/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Calls Django Auth PasswordResetForm save method. Accepts the following POST parameters: email Returns the success/fail message.
+     *
+     * @tags accounts
+     * @name AccountsPasswordResetCreate
+     * @request POST:/api/v1/accounts/password/reset/
+     * @secure
+     */
+    accountsPasswordResetCreate: (data: PasswordResetRequest, params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/password/reset/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Password reset e-mail link is confirmed, therefore this resets the user's password. Accepts the following POST parameters: token, uid, new_password1, new_password2 Returns the success/fail message.
+     *
+     * @tags accounts
+     * @name AccountsPasswordResetConfirmCreate
+     * @request POST:/api/v1/accounts/password/reset/confirm/
+     * @secure
+     */
+    accountsPasswordResetConfirmCreate: (data: PasswordResetConfirmRequest, params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/password/reset/confirm/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosList
+     * @tags accounts
+     * @name AccountsRegistrationCreate
+     * @request POST:/api/v1/accounts/registration/
+     * @secure
+     */
+    accountsRegistrationCreate: (data: RegisterRequest, params: RequestParams = {}) =>
+      this.request<JWT, any>({
+        path: `/api/v1/accounts/registration/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags accounts
+     * @name AccountsRegistrationResendEmailCreate
+     * @request POST:/api/v1/accounts/registration/resend-email/
+     * @secure
+     */
+    accountsRegistrationResendEmailCreate: (data: ResendEmailVerificationRequest, params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/registration/resend-email/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags accounts
+     * @name AccountsRegistrationVerifyEmailCreate
+     * @request POST:/api/v1/accounts/registration/verify-email/
+     * @secure
+     */
+    accountsRegistrationVerifyEmailCreate: (data: VerifyEmailRequest, params: RequestParams = {}) =>
+      this.request<RestAuthDetail, any>({
+        path: `/api/v1/accounts/registration/verify-email/`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Takes a refresh type JSON web token and returns an access type JSON web token if the refresh token is valid.
+     *
+     * @tags accounts
+     * @name AccountsTokenRefreshCreate
+     * @request POST:/api/v1/accounts/token/refresh/
+     */
+    accountsTokenRefreshCreate: (data: TokenRefreshRequest, params: RequestParams = {}) =>
+      this.request<TokenRefresh, any>({
+        path: `/api/v1/accounts/token/refresh/`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Takes a token and indicates if it is valid.  This view provides no information about a token's fitness for a particular use.
+     *
+     * @tags accounts
+     * @name AccountsTokenVerifyCreate
+     * @request POST:/api/v1/accounts/token/verify/
+     */
+    accountsTokenVerifyCreate: (data: TokenVerifyRequest, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/accounts/token/verify/`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Reads and updates UserModel fields Accepts GET, PUT, PATCH methods. Default accepted fields: username, first_name, last_name Default display fields: pk, username, email, first_name, last_name Read-only fields: pk, email Returns UserModel fields.
+     *
+     * @tags accounts
+     * @name AccountsUserRetrieve
+     * @request GET:/api/v1/accounts/user/
+     * @secure
+     */
+    accountsUserRetrieve: (params: RequestParams = {}) =>
+      this.request<UserDetails, any>({
+        path: `/api/v1/accounts/user/`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Reads and updates UserModel fields Accepts GET, PUT, PATCH methods. Default accepted fields: username, first_name, last_name Default display fields: pk, username, email, first_name, last_name Read-only fields: pk, email Returns UserModel fields.
+     *
+     * @tags accounts
+     * @name AccountsUserUpdate
+     * @request PUT:/api/v1/accounts/user/
+     * @secure
+     */
+    accountsUserUpdate: (data: UserDetailsRequest, params: RequestParams = {}) =>
+      this.request<UserDetails, any>({
+        path: `/api/v1/accounts/user/`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Reads and updates UserModel fields Accepts GET, PUT, PATCH methods. Default accepted fields: username, first_name, last_name Default display fields: pk, username, email, first_name, last_name Read-only fields: pk, email Returns UserModel fields.
+     *
+     * @tags accounts
+     * @name AccountsUserPartialUpdate
+     * @request PATCH:/api/v1/accounts/user/
+     * @secure
+     */
+    accountsUserPartialUpdate: (data: PatchedUserDetailsRequest, params: RequestParams = {}) =>
+      this.request<UserDetails, any>({
+        path: `/api/v1/accounts/user/`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags todos
+     * @name TodosList
      * @request GET:/api/v1/todos/
      * @secure
      */
-    apiV1TodosList: (params: RequestParams = {}) =>
+    todosList: (params: RequestParams = {}) =>
       this.request<Todo[], any>({
         path: `/api/v1/todos/`,
         method: "GET",
@@ -195,12 +588,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosCreate
+     * @tags todos
+     * @name TodosCreate
      * @request POST:/api/v1/todos/
      * @secure
      */
-    apiV1TodosCreate: (data: TodoRequest, params: RequestParams = {}) =>
+    todosCreate: (data: TodoRequest, params: RequestParams = {}) =>
       this.request<Todo, any>({
         path: `/api/v1/todos/`,
         method: "POST",
@@ -214,12 +607,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosRetrieve
+     * @tags todos
+     * @name TodosRetrieve
      * @request GET:/api/v1/todos/{id}/
      * @secure
      */
-    apiV1TodosRetrieve: (id: number, params: RequestParams = {}) =>
+    todosRetrieve: (id: number, params: RequestParams = {}) =>
       this.request<Todo, any>({
         path: `/api/v1/todos/${id}/`,
         method: "GET",
@@ -231,12 +624,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosUpdate
+     * @tags todos
+     * @name TodosUpdate
      * @request PUT:/api/v1/todos/{id}/
      * @secure
      */
-    apiV1TodosUpdate: (id: number, data: TodoRequest, params: RequestParams = {}) =>
+    todosUpdate: (id: number, data: TodoRequest, params: RequestParams = {}) =>
       this.request<Todo, any>({
         path: `/api/v1/todos/${id}/`,
         method: "PUT",
@@ -250,12 +643,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosPartialUpdate
+     * @tags todos
+     * @name TodosPartialUpdate
      * @request PATCH:/api/v1/todos/{id}/
      * @secure
      */
-    apiV1TodosPartialUpdate: (id: number, data: PatchedTodoRequest, params: RequestParams = {}) =>
+    todosPartialUpdate: (id: number, data: PatchedTodoRequest, params: RequestParams = {}) =>
       this.request<Todo, any>({
         path: `/api/v1/todos/${id}/`,
         method: "PATCH",
@@ -269,12 +662,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @tags api
-     * @name ApiV1TodosDestroy
+     * @tags todos
+     * @name TodosDestroy
      * @request DELETE:/api/v1/todos/{id}/
      * @secure
      */
-    apiV1TodosDestroy: (id: number, params: RequestParams = {}) =>
+    todosDestroy: (id: number, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/v1/todos/${id}/`,
         method: "DELETE",

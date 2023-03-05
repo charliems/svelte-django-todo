@@ -17,7 +17,7 @@ export const actions = {
         try {
             let id = Number(params.id);
             const result = todoSchema.parse(formData);
-            let res = todosApi.api.apiV1TodosUpdate(id, result as TodoRequest)
+            let res = todosApi.api.todosUpdate(id, result as TodoRequest)
                 .then((res) => {
                     return {
                         success: true,

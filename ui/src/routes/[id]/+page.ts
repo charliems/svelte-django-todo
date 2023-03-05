@@ -7,7 +7,7 @@ export const load = (async ({ params }) => {
     if (isNaN(id)) {
         throw error(404, "Not found");
     }
-    const todo = await todosApi.api.apiV1TodosRetrieve(id)
+    const todo = await todosApi.api.todosRetrieve(id)
         .catch((err) => {
             throw error(404, "Not found");
         });
