@@ -1,19 +1,19 @@
 <script lang="ts">
     import { applyAction, enhance } from "$app/forms";
     import { invalidateAll } from "$app/navigation";
-    import { fade } from "svelte/transition";
+    import { page } from "$app/stores";
     import type { ActionData, PageData } from "./$types";
 
     export let data: PageData;
     export let form: ActionData;
-    let edit = false;
+    let edit = $page.url.searchParams.get('edit') === 'true';
 </script>
 
 {#if data.todo}
     {#if !edit}
         <h1>{data.todo.title}</h1>
         <p>{data.todo.description}</p>
-        <button on:click={() => (edit = true)}>Edit</button>
+        <a href="?edit=true" on:click|preventDefault={() => (edit = true)}>Edit</a>
     {:else}
         {#if form?.error?.message}
             <p>{form.error.message}</p>
