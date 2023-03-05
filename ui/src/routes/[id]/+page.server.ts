@@ -1,37 +1,49 @@
-import type { Actions, PageServerLoad } from "./$types";
-import { error } from "@sveltejs/kit";
+import type { Actions } from "./$types";
 import { todosApi } from "$lib/sdk/client";
 import type { TodoRequest } from "$lib/sdk/todos";
+import { z } from 'zod';
+import type { AxiosError } from "axios";
+import { fail } from "@sveltejs/kit";
 
-export const load = (async ({ params }) => {
-    // Get the todo from the API
-    // make sure id is number
-    let id = Number(params.id);
-    if (isNaN(id)) {
-        throw error(404, "Not found");
-    }
-    const todo = await todosApi.api.apiV1TodosRetrieve(id)
-        .catch((err) => {
-            throw error(404, "Not found");
-        });
-    return {
-        todo: todo.data
-    }
-}) satisfies PageServerLoad;
+const todoSchema = z.object({
+    title: z.string({ required_error: 'Todo title is required' }).min(1, { message: 'Todo title required' }).max(64, { message: 'The maximum length is 64' }).trim(),
+    description: z.string().min(0).max(256, { message: "Description must be less than 256 characters" }),
+})
 
 export const actions = {
-    update: async ({ request }) => {
-        const data = await request.formData();
-        const id = data.get('id');
-        const title = data.get('title');
-        const description = data.get('description');
+    update: async ({ request, params }) => {
+        const formData = Object.fromEntries(await request.formData());
 
-        if (id && title && description) {
-            const todo: TodoRequest = {
-                title: String(title),
-                description: String(description),
+        try {
+            let id = Number(params.id);
+            const result = todoSchema.parse(formData);
+            let res = todosApi.api.apiV1TodosUpdate(id, result as TodoRequest)
+                .then((res) => {
+                    return {
+                        success: true,
+                    }
+                }).catch((err: AxiosError) => {
+                    return fail(400, {
+                        data: formData,
+                        errors: err.response?.data as TodoRequest,
+                    })
+                });
+            return res;
+        } catch (err) {
+            if (err instanceof z.ZodError) {
+                const { fieldErrors: errors } = err.flatten();
+                return fail(400, {
+                    data: formData,
+                    validation: errors
+                })
+            } else {
+                return fail(500, {
+                    data: formData,
+                    error: {
+                        message: "Something went wrong",
+                    }
+                })
             }
-            let updated = await todosApi.api.apiV1TodosUpdate(Number(id), todo);
         }
     },
 } satisfies Actions;
