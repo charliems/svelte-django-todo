@@ -3,8 +3,6 @@ import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
 export const load = (async ({ params }) => {
-    // Get the todo from the API
-    // make sure id is number
     let id = Number(params.id);
     if (isNaN(id)) {
         throw error(404, "Not found");
