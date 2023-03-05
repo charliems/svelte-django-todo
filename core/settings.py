@@ -161,10 +161,13 @@ SITE_ID = 1
 
 REST_AUTH = {
     'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'todo-auth',
 }
 
+REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'todo-auth'
-JWT_AUTH_REFRESH_COOKIE = 'todo-refresh'
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+AUTH_USER_MODEL = 'accounts.User'

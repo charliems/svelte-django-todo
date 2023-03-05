@@ -150,6 +150,22 @@ export interface TokenVerifyRequest {
   token: string;
 }
 
+export interface User {
+  id: number;
+  /**
+   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+   * @maxLength 150
+   * @pattern ^[\w.@+-]+$
+   */
+  username: string;
+  /**
+   * Email address
+   * @format email
+   * @maxLength 254
+   */
+  email?: string;
+}
+
 /** User model w/o password */
 export interface UserDetails {
   /** ID */
@@ -361,6 +377,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<RestAuthDetail, any>({
         path: `/api/v1/accounts/logout/`,
         method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags accounts
+     * @name AccountsMeRetrieve
+     * @request GET:/api/v1/accounts/me/
+     * @secure
+     */
+    accountsMeRetrieve: (params: RequestParams = {}) =>
+      this.request<User, any>({
+        path: `/api/v1/accounts/me/`,
+        method: "GET",
         secure: true,
         format: "json",
         ...params,

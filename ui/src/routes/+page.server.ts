@@ -16,7 +16,7 @@ export const actions = {
 
         try {
             const result = todoSchema.parse(formData);
-            let res = todosApi.api.apiV1TodosCreate(result as TodoRequest)
+            let res = todosApi.api.todosCreate(result as TodoRequest)
                 .then((res) => {
                     return {
                         success: true,
@@ -50,7 +50,7 @@ export const actions = {
 
         try {
             let id = Number(formData.id);
-            let res = todosApi.api.apiV1TodosDestroy(id)
+            let res = todosApi.api.todosDestroy(id)
                 .then((res) => {
                     return {
                         success: true,

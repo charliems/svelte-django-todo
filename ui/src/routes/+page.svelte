@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade, fly, slide } from "svelte/transition";
+    import { fly } from "svelte/transition";
     import type { ActionData, PageData } from "./$types";
     import { enhance } from "$app/forms";
 
