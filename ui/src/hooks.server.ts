@@ -1,20 +1,26 @@
-import { todosApi } from "$lib/sdk/client";
+import { PUBLIC_API } from "$env/static/public";
 import type { Handle } from "@sveltejs/kit";
 export const handle: Handle = async ({ event, resolve}) => {
     const token = event.cookies.get('token');
     if (!token) {
         return await resolve(event);
     }
-
-    return await todosApi.api.accountsMeRetrieve({
+    const res = await fetch(`${PUBLIC_API}/accounts/me/`, {
+        method: 'GET',
         headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
-        }
-    }).then(async (res) => {
-        event.locals.user = res.data as App.Locals['user'];
-        return await resolve(event);
-    })
-    .catch(async (err) => {
-        return await resolve(event);
-    })
+        },
+    });
+    if (res.ok) {
+        event.locals.user = await res.json() as App.Locals['user'];
+    } else {
+        event.cookies.delete('token', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+        })
+    }
+    return await resolve(event);
 }

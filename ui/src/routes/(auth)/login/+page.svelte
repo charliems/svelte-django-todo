@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { enhance } from "$app/forms";
     import type { ActionData } from "./$types";
     export let form: ActionData;
 </script>
@@ -6,7 +7,7 @@
 {#if form?.errors?.non_field_errors}
     <p>{form.errors.non_field_errors}</p>
 {/if}
-<form method="post">
+<form method="post" use:enhance>
     {#if form?.errors?.email}
         <p>{form.errors.email}</p>
     {/if}

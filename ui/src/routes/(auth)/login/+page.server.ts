@@ -1,14 +1,17 @@
 import type { Actions } from "./$types";
 import { z } from 'zod';
-import { fail, redirect } from "@sveltejs/kit";
-import { todosApi } from "$lib/sdk/client";
-import type { LoginRequest } from "$lib/sdk/todos";
-import { AxiosError } from "axios";
+import { fail } from "@sveltejs/kit";
+import { PUBLIC_API } from "$env/static/public";
 
 const loginSchema = z.object({
     email: z.string().email(),
     password: z.string()
 })
+
+interface LoginRequest {
+    email: string;
+    password: string;
+}
 
 interface LoginError {
     email?: string[];
@@ -16,14 +19,49 @@ interface LoginError {
     non_field_errors?: string[];
 }
 
+interface LoginResponse {
+    access_token: string;
+    user: {
+        id: number;
+        email: string;
+        username: string;
+    };
+}
+
 export const actions = {
-    default: async ({ request, cookies }) => {
+    default: async ({ request, cookies, fetch, locals }) => {
         const formData = Object.fromEntries(await request.formData());
-        let login: LoginRequest;
         try {
-            login = loginSchema.parse(formData);
+            const parsedLogin = loginSchema.parse(formData);
+            const login = JSON.stringify(parsedLogin as LoginRequest);
+            const res = await fetch(`${PUBLIC_API}/accounts/login/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: login,
+            });
+            if (!res.ok) {
+                const errors = await res.json() as LoginError;
+                return fail(res.status, {
+                    data: formData,
+                    errors,
+                })
+            } else {
+                const response = await res.json() as LoginResponse;
+                cookies.set('token', response.access_token, {
+                    path: '/',
+                    httpOnly: true,
+                    sameSite: 'strict',
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 60 * 60 * 24 * 30,
+                })
+                locals.user = response.user;
+                return {
+                    user: response.user,
+                }
+            }
         } catch (err) {
-            console.log(err)
             if (err instanceof z.ZodError) {
                 const { fieldErrors: errors } = err.flatten();
                 return fail(400, {
@@ -39,25 +77,5 @@ export const actions = {
                 })
             }
         }
-
-        let res = await todosApi.api.accountsLoginCreate(login as LoginRequest)
-            .catch((err: AxiosError) => {
-                return err;
-            });
-        if (res instanceof AxiosError) {
-            console.log(res)
-            return fail(400, {
-                data: formData,
-                errors: res.response?.data as LoginError,
-            });
-        }
-        cookies.set('token', res.data.access_token, {
-            path: '/',
-            httpOnly: true,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 30,
-        })
-        throw redirect(302, '/')
     }
 } satisfies Actions;

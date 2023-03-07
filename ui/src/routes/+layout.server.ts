@@ -1,10 +1,12 @@
-import { todosApi } from "$lib/sdk/client";
 import type { LayoutServerLoad } from "./$types";
+import { PUBLIC_API } from "$env/static/public";
+import type { Todo } from "$lib/types/Todo";
 
-export const load = (async ({ locals }) => {
-    let todos = await todosApi.api.todosList();
+export const load = (async ({ locals, fetch }) => {
+    let todos = await fetch(`${PUBLIC_API}/todos/`);
+    let todosJson = await todos.json() as Todo[];
     return {
-        todos: todos.data,
+        todos: todosJson,
         user: locals.user,
     };
 }) satisfies LayoutServerLoad;

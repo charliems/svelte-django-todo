@@ -1,9 +1,9 @@
 import type { Actions } from "./$types";
-import { todosApi } from "$lib/sdk/client";
-import type { TodoRequest } from "$lib/sdk/todos";
 import { z } from 'zod';
-import type { AxiosError } from "axios";
 import { fail } from "@sveltejs/kit";
+import type { TodoRequest } from "$lib/types/Todo";
+import { PUBLIC_API } from "$env/static/public";
+
 
 const todoSchema = z.object({
     title: z.string({ required_error: 'Todo title is required' }).min(1, { message: 'Todo title required' }).max(64, { message: 'The maximum length is 64' }).trim(),
@@ -11,25 +11,33 @@ const todoSchema = z.object({
 })
 
 export const actions = {
-    update: async ({ request, params }) => {
+    update: async ({ request, params, fetch }) => {
         const formData = Object.fromEntries(await request.formData());
-
         try {
             let id = Number(params.id);
-            const result = todoSchema.parse(formData);
-            let res = todosApi.api.todosUpdate(id, result as TodoRequest)
-                .then((res) => {
-                    return {
-                        success: true,
-                    }
-                }).catch((err: AxiosError) => {
-                    return fail(400, {
-                        data: formData,
-                        errors: err.response?.data as TodoRequest,
-                    })
-                });
-            return res;
+            const parsedTodo = todoSchema.parse(formData);
+            let todo = JSON.stringify(parsedTodo as TodoRequest);
+            console.log(todo);
+            let res = await fetch(`${PUBLIC_API}/todos/${id}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: todo,
+            });
+            if (res.ok) {
+                return {
+                    success: true,
+                }
+            } else {
+                let errors = await res.json() as TodoRequest;
+                return fail(res.status, {
+                    data: formData,
+                    errors,
+                })
+            }
         } catch (err) {
+            console.log(err);
             if (err instanceof z.ZodError) {
                 const { fieldErrors: errors } = err.flatten();
                 return fail(400, {
@@ -45,5 +53,5 @@ export const actions = {
                 })
             }
         }
-    },
+    }
 } satisfies Actions;
