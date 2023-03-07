@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import datetime
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -162,6 +162,14 @@ SITE_ID = 1
 REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'todo-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'todo-refresh',
+    'JWT_AUTH_HTTPONLY': False,
+    'JWT_AUTH_RETURN_EXPIRATION': True,
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=7),
 }
 
 REST_USE_JWT = True

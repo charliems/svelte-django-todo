@@ -10,7 +10,7 @@ const todoSchema = z.object({
 });
 
 export const actions = {
-    create: async ({ request, fetch }) => {
+    create: async ({ request, fetch, cookies }) => {
         const formData = Object.fromEntries(await request.formData());
         let todo: TodoRequest;
         try {
@@ -37,6 +37,7 @@ export const actions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: `Bearer ${cookies.get('access_token')}`
             },
             body: JSON.stringify(todo),
         });
@@ -46,19 +47,21 @@ export const actions = {
             }
         } else {
             let errors = await created.json() as TodoRequestError;
+            console.log(errors)
             return fail(created.status, {
                 data: formData,
-                errors,
+                errors
             })
         }
     },
-    delete: async ({ request, fetch }) => {
+    delete: async ({ request, fetch, cookies }) => {
         const formData = Object.fromEntries(await request.formData());
 
         let deleted = await fetch(`${PUBLIC_API}/todos/${formData.id}/`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: `Bearer ${cookies.get('access_token')}`
             },
         });
         if (deleted.ok) {

@@ -8,6 +8,9 @@
 {#if form?.error?.message}
     <p>{form.error.message}</p>
 {/if}
+{#if form?.errors?.detail}
+    <p>{form.errors.detail}</p>
+{/if}
 <form action="?/create" method="post" use:enhance>
     {#if form?.validation?.title}
         <p>{form.validation.title}</p>

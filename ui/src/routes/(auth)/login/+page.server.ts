@@ -21,6 +21,9 @@ interface LoginError {
 
 interface LoginResponse {
     access_token: string;
+    refresh_token: string;
+    access_token_expiration: string;
+    refresh_token_expiration: string;
     user: {
         id: number;
         email: string;
@@ -49,12 +52,21 @@ export const actions = {
                 })
             } else {
                 const response = await res.json() as LoginResponse;
-                cookies.set('token', response.access_token, {
+                const access_expiration = new Date(response.access_token_expiration);
+                const refresh_expiration = new Date(response.refresh_token_expiration);
+                cookies.set('access_token', response.access_token, {
                     path: '/',
                     httpOnly: true,
                     sameSite: 'strict',
                     secure: process.env.NODE_ENV === 'production',
-                    maxAge: 60 * 60 * 24 * 30,
+                    maxAge: access_expiration.getTime() - Date.now(),
+                })
+                cookies.set('refresh_token', response.refresh_token, {
+                    path: '/',
+                    httpOnly: true,
+                    sameSite: 'strict',
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: refresh_expiration.getTime() - Date.now(),
                 })
                 locals.user = response.user;
                 return {

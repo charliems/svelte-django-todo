@@ -13,4 +13,5 @@ export interface TodoRequestError {
     title?: string;
     description?: string;
     non_field_errors?: string[];
+    detail?: string;
 }
